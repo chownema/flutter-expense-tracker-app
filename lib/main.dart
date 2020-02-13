@@ -15,6 +15,7 @@ import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:unicorndial/unicorndial.dart';
 
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
@@ -122,8 +123,10 @@ class DBService {
     final db = ObjectDB(path);
     await db.open(false);
     if (id != null) {
-      await db.update({'id': id}, jsonDecode(
-          jsonEncode(entity, toEncodable: Helper.handleDateTimeParse)));
+      await db.update(
+          {'id': id},
+          jsonDecode(
+              jsonEncode(entity, toEncodable: Helper.handleDateTimeParse)));
     } else {
       await db.insert(jsonDecode(
           jsonEncode(entity, toEncodable: Helper.handleDateTimeParse)));
@@ -327,45 +330,55 @@ class _MyHomePageState extends State<MyHomePage> {
     return WillPopScope(
         child: Scaffold(
           body: [
-            new ListViewWidgetBuilder(
-                this.stateService,
-                this.stateService.folderList,
-                (item) => {
-                      setState(() {
-                        this.stateService.currentViewIndex =
-                            ConstantsService.VIEW_INDEX_EXPENSE_LIST;
-                        this.stateService.currentExpenseFolder = item['name'];
-                      })
-                    },
-                (item) => {print('onRemove' + item)},
-                (item) => {print('onShare' + item)},
-                (item) => {print('onMoreOptions' + item)},
-                (item) => {print('onArchiveItem' + item)}).getView(),
-            FutureBuilder(
-                future: this
-                    .stateService
-                    .fetchExpenses(this.stateService.currentExpenseFolder),
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    return new ListViewWidgetBuilder(
-                        this.stateService,
-                        this.stateService.getExpenses(
+            GestureDetector(
+                child: Hero(
+              tag: 'ExpenseListHero',
+              child: new ListViewWidgetBuilder(
+                  this.stateService,
+                  this.stateService.folderList,
+                  (item) => {
+                        setState(() {
+                          this.stateService.currentViewIndex =
+                              ConstantsService.VIEW_INDEX_EXPENSE_LIST;
+                          this.stateService.currentExpenseFolder = item['name'];
+                        })
+                      },
+                  (item) => {print('onRemove' + item)},
+                  (item) => {print('onShare' + item)},
+                  (item) => {print('onMoreOptions' + item)},
+                  (item) => {print('onArchiveItem' + item)}).getView(),
+            )),
+            GestureDetector(
+                child: Hero(
+                    tag: 'ExpenseListHero',
+                    child: FutureBuilder(
+                        future: this.stateService.fetchExpenses(
                             this.stateService.currentExpenseFolder),
-                        (item) => {
-                              setState(() {
-                                this.stateService.currentViewIndex =
-                                    ConstantsService.VIEW_INDEX_CREATE;
-                                this.stateService.currentExpenseItem = item;
-                              })
-                            },
-                        (item) => {print('onRemove' + item)},
-                        (item) => {print('onShare' + item)},
-                        (item) => {print('onMoreOptions' + item)},
-                        (item) => {print('onArchiveItem' + item)}).getView();
-                  } else {
-                    return new ListView();
-                  }
-                }),
+                        builder:
+                            (BuildContext context, AsyncSnapshot snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return new ListViewWidgetBuilder(
+                                this.stateService,
+                                this.stateService.getExpenses(
+                                    this.stateService.currentExpenseFolder),
+                                (item) => {
+                                      setState(() {
+                                        this.stateService.currentViewIndex =
+                                            ConstantsService.VIEW_INDEX_CREATE;
+                                        this.stateService.currentExpenseItem =
+                                            item;
+                                      })
+                                    },
+                                (item) => {print('onRemove' + item)},
+                                (item) => {print('onShare' + item)},
+                                (item) => {print('onMoreOptions' + item)},
+                                (item) =>
+                                    {print('onArchiveItem' + item)}).getView();
+                          } else {
+                            return new ListView();
+                          }
+                        }))),
             new CreateViewWidgetBuilder(
                 this.stateService,
                 this.stateService.currentExpenseItem,
@@ -385,17 +398,47 @@ class _MyHomePageState extends State<MyHomePage> {
                       })
                     }).getView()
           ][this.stateService.currentViewIndex],
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                this.stateService.currentViewIndex =
-                    ConstantsService.VIEW_INDEX_CREATE;
-                this.stateService.currentExpenseItem = {};
-              });
-            },
-            tooltip: 'Add Expense',
-            child: Icon(Icons.add),
-          ), // This trailing comma makes auto-formatting nicer for build methods.
+          floatingActionButton: UnicornDialer(
+            parentButtonBackground: Colors.indigo,
+            orientation: UnicornOrientation.VERTICAL,
+            parentButton: Icon(Icons.add),
+            childButtons: [
+              UnicornButton(
+                  hasLabel: true,
+                  labelText: "New Folder",
+                  currentButton: FloatingActionButton(
+                    heroTag: "newFolder",
+                    mini: true,
+                    backgroundColor: Colors.indigo,
+                    child: Icon(Icons.folder),
+                    onPressed: () {
+                      print('new expense');
+                      setState(() {
+                        this.stateService.currentViewIndex =
+                            ConstantsService.VIEW_INDEX_CREATE;
+                        this.stateService.currentExpenseItem = {};
+                      });
+                    },
+                  )),
+              UnicornButton(
+                  hasLabel: true,
+                  labelText: "New Expense",
+                  currentButton: FloatingActionButton(
+                    heroTag: "newExpense",
+                    mini: true,
+                    backgroundColor: Colors.indigo,
+                    child: Icon(Icons.receipt),
+                    onPressed: () {
+                      print('new expense');
+                      setState(() {
+                        this.stateService.currentViewIndex =
+                            ConstantsService.VIEW_INDEX_CREATE;
+                        this.stateService.currentExpenseItem = {};
+                      });
+                    },
+                  ))
+            ],
+          ),
         ),
         onWillPop: _onWillPop);
   }
